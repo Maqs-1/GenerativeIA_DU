@@ -1,38 +1,35 @@
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_chroma import Chroma
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
 import os
 from dotenv import load_dotenv
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory
 
 load_dotenv()
 
-def get_rag_response(query):
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+def get_rag_chain():
+    # Utilisation des embeddings Google (plus stable dans ton venv actuel)
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+    # Chargement du vectorstore existant (Chroma)
     vectorstore = Chroma(persist_directory="./vectorstore", embedding_function=embeddings)
     
+    # Configuration du modèle
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
-
-    # Définition du système de réponse
-    system_prompt = (
-        "Utilise les éléments de contexte suivants pour répondre à la question. "
-        "Si tu ne sais pas, dis que tu ne sais pas. "
-        "\n\n"
-        "{context}"
-    )
     
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "{input}"),
-    ])
+    # Ajout d'une mémoire pour que le RAG se souvienne du contexte
+    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    
+    # Création de la chaîne (inspirée de rag_langchain.py qui fonctionne)
+    chain = ConversationalRetrievalChain.from_llm(
+        llm=llm,
+        retriever=vectorstore.as_retriever(),
+        memory=memory
+    )
+    return chain
 
-    # Création de la chaîne
-    question_answer_chain = create_stuff_documents_chain(llm, prompt)
-    rag_chain = create_retrieval_chain(vectorstore.as_retriever(), question_answer_chain)
-
-    return rag_chain.invoke({"input": query})
-
-if __name__ == "__main__":
-    res = get_rag_response("Pose ta question ici")
-    print(res["answer"])
+# Fonction pour l'agent
+def query_rag(question):
+    chain = get_rag_chain()
+    result = chain.invoke({"question": question})
+    return result["answer"]

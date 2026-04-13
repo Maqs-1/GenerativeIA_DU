@@ -26,7 +26,7 @@ def build_vectorstore():
 
     print("3. Vectorisation et création de la base via Gemini...")
     # Utilisation du modèle d'embedding officiel de Google
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     
     vectorstore = Chroma.from_documents(
         documents=splits,

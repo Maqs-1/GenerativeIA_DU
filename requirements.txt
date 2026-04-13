@@ -1,10 +1,19 @@
+# --- LangChain Ecosystem ---
 langchain>=0.3.0
 langchain-community>=0.3.0
 langchain-core>=0.3.0
-langchain-chroma
 langchain-google-genai
+langchain-chroma
+langchain-openai
+
+# --- Data & Vectors ---
 chromadb
+faiss-cpu
 pypdf
 python-dotenv
+#numpy<2.0.0
+tqdm
+
+# --- UI & Search ---
 streamlit
 tavily-python
